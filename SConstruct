@@ -171,6 +171,9 @@ main_env.Append(sunstone=ARGUMENTS.get('sunstone', 'no'))
 # Docker-machine addon generation
 main_env.Append(docker_machine=ARGUMENTS.get('docker_machine', 'no'))
 
+# Man pages generation
+main_env.Append(man=ARGUMENTS.get('man', 'no'))
+
 if not main_env.GetOption('clean'):
     try:
         if mysql == 'yes':
@@ -224,6 +227,10 @@ main_env.ParseConfig('xml2-config --libs --cflags')
 svncterm_path = 'src/vmm_mad/remotes/lib/lxd/svncterm_server/SConstruct'
 
 # SCONS scripts to build
+prepare_scripts=[
+    'src/sunstone/public/SPrepare',
+]
+
 build_scripts=[
     'src/parsers/SConstruct',
     'src/sql/SConstruct',
@@ -267,6 +274,7 @@ build_scripts=[
     'src/sunstone/public/locale/languages/SConstruct',
     'src/sunstone/public/SConstruct',
     'share/rubygems/SConstruct',
+    'share/man/SConstruct',
     'src/im_mad/collectd/SConstruct',
     'src/client/SConstruct',
     'src/docker_machine/SConstruct',
@@ -280,6 +288,12 @@ if svncterm == 'no':
 else:
     pass
 
-for script in build_scripts:
-    env = main_env.Clone()
-    SConscript(script, exports='env')
+if ARGUMENTS.get('build_only', 'no') == 'no':
+    for pscript in prepare_scripts:
+        env = main_env.Clone()
+        SConscript(pscript, exports='env')
+
+if ARGUMENTS.get('prepare_only', 'no') == 'no':
+    for script in build_scripts:
+        env = main_env.Clone()
+        SConscript(script, exports='env')

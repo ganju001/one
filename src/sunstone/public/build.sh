@@ -5,16 +5,18 @@ set -e
 #-------------------------------------------------------------------------------
 usage() {
  echo
- echo "Usage: build.sh [-d] [-c] [-l] [-h]"
+ echo "Usage: build.sh [-d] [-c] [-p] [-l] [-h]"
  echo
  echo "-d: install build dependencies (bower, grunt)"
  echo "-c: clean build"
+ echo "-p: prepare the build only (clean, dependencies, download)"
  echo "-l: preserve main.js"
  echo "-h: prints this help"
 }
 
 clean() {
     rm -rf dist node_modules bower_components
+    rm -rf bower_components/no-vnc/node_modules
 }
 
 dependencies() {
@@ -25,13 +27,21 @@ dependencies() {
     export PATH=$PATH:$PWD/node_modules/.bin
 }
 
-install_patch() {
-
+download() {
     npm install
 
     bower install --force --allow-root --config.interactive=false
 
     (cd bower_components/no-vnc/ && npm install && ./utils/use_require.js --clean --as amd && sed -i -e "s/'\.\//'\.\.\/bower_components\/no-vnc\/lib\//g" lib/rfb.js )
+}
+
+prepare() {
+   clean
+   dependencies
+   download
+}
+
+install_patch() { 
 
     PATCH_DIR="./patches/"
 
@@ -58,7 +68,7 @@ install_patch() {
 }
 #-------------------------------------------------------------------------------
 
-PARAMETERS="dlch"
+PARAMETERS="dlpch"
 
 if [ $(getopt --version | tr -d " ") = "--" ]; then
     TEMP_OPT=`getopt $PARAMETERS "$@"`
@@ -76,6 +86,7 @@ while true ; do
     case "$1" in
         -d) DEPENDENCIES="yes"   ; shift ;;
         -c) CLEAN="yes"   ; shift ;;
+        -p) PREPARE="yes"   ; shift ;;
         -l) DO_LINK="yes"   ; shift ;;
         -h) usage; exit 0;;
         --) shift ; break ;;
@@ -90,6 +101,11 @@ fi
 
 if [ "$DEPENDENCIES" = "yes" ]; then
     dependencies
+    exit 0
+fi
+
+if [ "$PREPARE" = "yes" ]; then
+    prepare
     exit 0
 fi
 
